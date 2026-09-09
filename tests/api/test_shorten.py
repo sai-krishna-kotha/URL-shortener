@@ -3,6 +3,7 @@ from httpx import AsyncClient
 from app.main import app
 from app.core.config import settings
 from app.api.dependencies import get_db
+from app.core.rate_limiter import check_rate_limit
 
 @pytest.fixture
 def apply_db_override(db_session):
@@ -10,6 +11,7 @@ def apply_db_override(db_session):
         yield db_session
     
     app.dependency_overrides[get_db] = _override_get_db
+    app.dependency_overrides[check_rate_limit] = lambda: None
     yield
     app.dependency_overrides.clear()
 

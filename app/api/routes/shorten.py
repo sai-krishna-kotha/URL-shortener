@@ -4,6 +4,7 @@ from app.services.url_service import URLService
 from app.api.dependencies import get_url_service
 from app.core.exceptions import InvalidURL, InvalidAlias, AliasAlreadyExists, ShortCodeGenerationError
 from app.core.config import settings
+from app.core.rate_limiter import check_rate_limit
 
 router = APIRouter()
 
@@ -13,9 +14,11 @@ router = APIRouter()
     status_code=status.HTTP_201_CREATED,
     summary="Create a shortened URL",
     description="Submits a target URL and returns a unique short URL. Supports custom aliases and expiration.",
+    dependencies=[Depends(check_rate_limit)],
     responses={
         400: {"description": "Invalid URL or Alias format"},
         409: {"description": "Custom alias already exists"},
+        429: {"description": "Rate limit exceeded"},
         500: {"description": "Failed to generate short code"}
     }
 )

@@ -126,3 +126,13 @@ class URLService:
         await self.repository.increment_clicks(short_code)
         
         return url_data["target_url"]
+
+    async def get_url_stats(self, short_code: str) -> URL:
+        """
+        Retrieves URL statistics directly from the database.
+        Returns the URL model if found, otherwise raises URLNotFound.
+        """
+        url_obj = await self.repository.get_by_short_code(short_code)
+        if not url_obj:
+            raise URLNotFound(f"URL with code {short_code} not found")
+        return url_obj

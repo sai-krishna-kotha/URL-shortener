@@ -16,8 +16,14 @@ def mock_session():
     return AsyncMock()
 
 @pytest.fixture
-def url_service(mock_repo, mock_session):
-    return URLService(repository=mock_repo, session=mock_session)
+def mock_redis():
+    redis = AsyncMock()
+    redis.get.return_value = None
+    return redis
+
+@pytest.fixture
+def url_service(mock_repo, mock_session, mock_redis):
+    return URLService(repository=mock_repo, session=mock_session, redis=mock_redis)
 
 @pytest.mark.asyncio
 async def test_valid_http_url_accepted(url_service, mock_repo):

@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from app.core.config import settings
-from app.api.routes import shorten
+from app.api.routes import shorten, redirect
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -8,6 +8,7 @@ app = FastAPI(
 )
 
 app.include_router(shorten.router, prefix=settings.API_V1_STR, tags=["URLs"])
+app.include_router(redirect.router, tags=["Redirect"])
 
 @app.get("/health")
 async def health_check():

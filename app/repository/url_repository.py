@@ -1,6 +1,7 @@
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy import update
 from sqlalchemy.exc import IntegrityError
 from app.models.url import URL
 
@@ -39,3 +40,11 @@ class URLRepository:
         await self.session.commit()
         await self.session.refresh(url)
         return url
+
+    async def increment_clicks(self, short_code: str) -> None:
+        """
+        Atomically increments the click counter for a short code.
+        """
+        stmt = update(URL).where(URL.short_code == short_code).values(clicks=URL.clicks + 1)
+        await self.session.execute(stmt)
+        await self.session.commit()

@@ -17,10 +17,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(shorten.router, prefix=settings.API_V1_STR, tags=["URLs"])
-app.include_router(analytics.router, prefix=f"{settings.API_V1_STR}/urls", tags=["Analytics"])
-app.include_router(redirect.router, tags=["Redirect"])
-
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}
+
+app.include_router(shorten.router, prefix=settings.API_V1_STR, tags=["URLs"])
+app.include_router(analytics.router, prefix=f"{settings.API_V1_STR}/urls", tags=["Analytics"])
+app.include_router(redirect.router, tags=["Redirect"])

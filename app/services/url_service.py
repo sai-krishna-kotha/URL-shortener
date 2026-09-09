@@ -1,6 +1,7 @@
 import re
 from urllib.parse import urlparse
 from typing import Optional
+from datetime import datetime
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -40,12 +41,12 @@ class URLService:
         if not ALIAS_REGEX.match(alias):
             raise InvalidAlias("Alias must be 3-30 characters long and contain only letters, numbers, hyphens, and underscores")
 
-    async def create_short_url(self, target_url: str, custom_alias: Optional[str] = None) -> URL:
+    async def create_short_url(self, target_url: str, custom_alias: Optional[str] = None, expires_at: Optional[datetime] = None) -> URL:
         self.validate_target_url(target_url)
 
         if custom_alias is not None:
             self.validate_alias(custom_alias)
-            url_record = URL(short_code=custom_alias, target_url=target_url)
+            url_record = URL(short_code=custom_alias, target_url=target_url, expires_at=expires_at)
             try:
                 return await self.repository.create(url_record)
             except IntegrityError:
@@ -54,7 +55,7 @@ class URLService:
         else:
             for _ in range(MAX_RETRIES):
                 short_code = generate_short_code()
-                url_record = URL(short_code=short_code, target_url=target_url)
+                url_record = URL(short_code=short_code, target_url=target_url, expires_at=expires_at)
                 try:
                     return await self.repository.create(url_record)
                 except IntegrityError:

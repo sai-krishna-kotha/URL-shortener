@@ -22,15 +22,18 @@ export default function ShortUrlResult({ shortUrl, originalUrl, clicks, expiresA
     : 'Never';
 
   return (
-    <div className="mt-8 p-6 bg-indigo-50 rounded-xl border border-indigo-100">
-      <h3 className="text-sm font-medium text-indigo-900 mb-3">Your shortened URL is ready!</h3>
-      <div className="flex flex-col sm:flex-row gap-3 mb-4">
-        <div className="flex-1 flex items-center bg-white px-4 py-3 rounded-lg border border-indigo-200 shadow-sm overflow-hidden">
-          <span className="text-indigo-600 font-medium truncate block w-full">{shortUrl}</span>
+    <div className="mt-8 p-6 bg-indigo-50/80 rounded-2xl border border-indigo-100 shadow-sm">
+      <h3 className="text-sm font-semibold text-indigo-900 mb-3 flex items-center">
+        <Check className="w-4 h-4 mr-1.5 text-indigo-600" /> 
+        Your shortened URL is ready!
+      </h3>
+      <div className="flex flex-col sm:flex-row gap-3 mb-5">
+        <div className="flex-1 flex items-center bg-white px-4 py-3.5 rounded-xl border border-indigo-200 shadow-inner overflow-hidden">
+          <span className="text-indigo-600 font-medium truncate block w-full text-lg">{shortUrl}</span>
         </div>
         <div className="flex gap-2">
-          <Button onClick={handleCopy} className="flex-shrink-0 flex-1 sm:flex-none">
-            {copied ? <><Check className="w-4 h-4 mr-2" />Copied</> : <><Copy className="w-4 h-4 mr-2" />Copy</>}
+          <Button onClick={handleCopy} className="flex-shrink-0 flex-1 sm:flex-none min-w-[120px]">
+            {copied ? <><Check className="w-4 h-4 mr-2" />Copied ✓</> : <><Copy className="w-4 h-4 mr-2" />Copy URL</>}
           </Button>
           <Button variant="secondary" className="flex-shrink-0 flex-1 sm:flex-none" onClick={() => window.open(shortUrl, '_blank', 'noopener,noreferrer')}>
             <ExternalLink className="w-4 h-4 mr-2" />

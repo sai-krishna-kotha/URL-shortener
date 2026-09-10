@@ -15,7 +15,7 @@ app.add_middleware(
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "http://localhost:3000",
-        "https://url-shortener-production-131.up.railway.app",
+        "https://url-shortener-121.up.railway.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],

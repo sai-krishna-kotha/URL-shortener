@@ -4,7 +4,7 @@ A production-oriented URL shortener built with FastAPI, PostgreSQL, Redis, and R
 
 ## Live Demo
 
-- Frontend: https://url-shortener-production-121.up.railway.app
+- Frontend: https://url-shortener-121.up.railway.app/
 - API: https://api-production-bf7ba.up.railway.app
 - API documentation: https://api-production-bf7ba.up.railway.app/docs
 
@@ -32,8 +32,8 @@ The application accepts a long HTTP or HTTPS URL and generates a unique 7-charac
 
 ```text
                          +-------------------+
-                         |     React SPA     |
-                         |   Nginx / Vite    |
+                         |     React SPA      |
+                         |   Nginx / Vite     |
                          +---------+---------+
                                    |
                                    | REST API
@@ -51,7 +51,7 @@ The application accepts a long HTTP or HTTPS URL and generates a unique 7-charac
                                    |
                                    v
                          +-------------------+
-                         |   URLRepository   |
+                         |   URLRepository    |
                          |  Data Access Layer |
                          +---------+---------+
                                    |
@@ -173,7 +173,7 @@ URL creation is protected by a Redis fixed-window limiter allowing 10 requests p
 │   └── utils/            # Utility functions such as Base62 generation
 ├── frontend/
 │   ├── src/              # React components, pages, services, utilities
-│   ├── Dockerfile        # Multi-stage frontend image
+│   ├── Dockerfile        # Multi-stage frontend Dockerfile
 │   └── nginx.conf        # Nginx SPA configuration
 ├── migrations/           # Alembic migrations
 ├── tests/                # Backend tests
@@ -364,13 +364,14 @@ The project has automated tests covering repository behavior, API behavior, vali
 
 ## Deployment
 
-The project is deployed using Railway with separate public services for the backend API and React frontend.
+The project is deployed using Railway with separate public services for the backend API and React frontend within the same Railway project.
 
 Production services:
 
 ```text
-Frontend -> https://url-shortener-production-121.up.railway.app
+Frontend -> https://url-shortener-121.up.railway.app/
 API      -> https://api-production-bf7ba.up.railway.app
+Swagger  -> https://api-production-bf7ba.up.railway.app/docs
 ```
 
 The frontend is built as a static React application and served by Nginx. The API runs with FastAPI and Uvicorn. PostgreSQL and Redis provide the backend persistence and infrastructure layers.

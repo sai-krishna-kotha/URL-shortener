@@ -372,7 +372,7 @@ Production services:
 
 ```text
 Frontend -> https://url-shortener-121.up.railway.app/
-Short-link API -> https://short-link-e.up.railway.app
+Short-link / API -> https://short-link-e.up.railway.app
 Swagger -> https://short-link-e.up.railway.app/docs
 ```
 

@@ -5,8 +5,10 @@ A production-oriented URL shortener built with FastAPI, PostgreSQL, Redis, and R
 ## Live Demo
 
 - Frontend: https://url-shortener-121.up.railway.app/
-- API: https://api-production-bf7ba.up.railway.app
-- API documentation: https://api-production-bf7ba.up.railway.app/docs
+- Short-link / API domain: https://short-link-e.up.railway.app
+- API documentation: https://short-link-e.up.railway.app/docs
+
+The frontend and API run as separate services in the same Railway project. Generated short links use the dedicated short-link domain, for example `https://short-link-e.up.railway.app/hiii`, while the React frontend remains available at its own URL.
 
 ## Project Overview
 
@@ -222,7 +224,7 @@ DOMAIN="http://localhost:8000"
 VITE_API_BASE_URL=http://localhost:8000
 ```
 
-For production, `DOMAIN` and `VITE_API_BASE_URL` should point to the deployed API instead of localhost.
+For production, `DOMAIN` and `VITE_API_BASE_URL` should point to the deployed API/short-link domain instead of localhost.
 
 ## Database Migrations
 
@@ -273,7 +275,7 @@ Response:
   "expires_at": null,
   "clicks": 0,
   "is_active": true,
-  "short_url": "https://api-production-bf7ba.up.railway.app/example"
+  "short_url": "https://short-link-e.up.railway.app/example"
 }
 ```
 
@@ -312,7 +314,7 @@ Response:
 Create a short URL:
 
 ```bash
-curl -X POST https://api-production-bf7ba.up.railway.app/api/v1/urls \
+curl -X POST https://short-link-e.up.railway.app/api/v1/urls \
   -H "Content-Type: application/json" \
   -d '{"target_url":"https://www.google.com"}'
 ```
@@ -320,13 +322,13 @@ curl -X POST https://api-production-bf7ba.up.railway.app/api/v1/urls \
 Redirect using the returned short code:
 
 ```bash
-curl -i https://api-production-bf7ba.up.railway.app/{short_code}
+curl -i https://short-link-e.up.railway.app/{short_code}
 ```
 
 Check statistics:
 
 ```bash
-curl https://api-production-bf7ba.up.railway.app/api/v1/urls/{short_code}/stats
+curl https://short-link-e.up.railway.app/api/v1/urls/{short_code}/stats
 ```
 
 ## Validation and Limits
@@ -370,11 +372,11 @@ Production services:
 
 ```text
 Frontend -> https://url-shortener-121.up.railway.app/
-API      -> https://api-production-bf7ba.up.railway.app
-Swagger  -> https://api-production-bf7ba.up.railway.app/docs
+Short-link API -> https://short-link-e.up.railway.app
+Swagger -> https://short-link-e.up.railway.app/docs
 ```
 
-The frontend is built as a static React application and served by Nginx. The API runs with FastAPI and Uvicorn. PostgreSQL and Redis provide the backend persistence and infrastructure layers.
+The dedicated short-link domain is used both for generated short URLs and API requests. The frontend is built as a static React application and served by Nginx. The API runs with FastAPI and Uvicorn. PostgreSQL and Redis provide the backend persistence and infrastructure layers.
 
 ## Known Limitations
 

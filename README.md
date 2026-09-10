@@ -1,190 +1,397 @@
 # URL Shortener
 
-A production-quality URL shortener built with FastAPI, PostgreSQL, Redis, and React. 
-This project is fully dockerized and ready for local release.
+A production-oriented URL shortener built with FastAPI, PostgreSQL, Redis, and React. The application supports short URL generation, custom aliases, optional expiration, click analytics, Redis caching, rate limiting, Dockerized local development, and public deployment.
 
-## 1. Project Overview
-This is a URL shortener that takes long URLs and generates a clean, readable 7-character short code. It also tracks the number of times each link is clicked and provides analytics.
+## Live Demo
 
-## 2. Features
-- **Short URL Generation**: Base62 encoded 7-character strings.
-- **Custom Aliases**: Allows user-defined human-readable aliases.
-- **Expiration**: URLs can be created with an optional expiration date.
-- **Caching & Redirection (Cache-Aside)**: High performance redirection backed by Redis.
-- **Rate Limiting**: Protects against rapid URL generation spam (Fixed-Window).
-- **Click Analytics**: Atomically increments clicks per redirect.
-- **Full SPA Frontend**: Built with React, Vite, and Tailwind CSS.
-- **Full Dockerization**: Simple one-command start.
+- Frontend: https://url-shortener-production-121.up.railway.app
+- API: https://api-production-bf7ba.up.railway.app
+- API documentation: https://api-production-bf7ba.up.railway.app/docs
 
-## 3. Architecture
-- **PostgreSQL**: The absolute source of truth. Handles data consistency and atomic click incrementation.
-- **Redis**: Caching and Rate Limiting infrastructure layer. Follows the Cache-Aside pattern. If Redis crashes, the application fails-open to Postgres.
-- **FastAPI Backend**: Built using a layered architecture: Router -> Service -> Repository.
-- **React Frontend**: Communicates with the backend REST API via standard HTTP calls.
+## Project Overview
 
-## 4. Tech Stack
-- **Backend**: Python, FastAPI, Pydantic, SQLAlchemy 2.0 (async), asyncpg, Alembic.
-- **Frontend**: React, Vite, Tailwind CSS (v4), React Router, Lucide React.
-- **Infrastructure**: Docker, Docker Compose, Nginx.
-- **Databases**: PostgreSQL 15, Redis 7.
+The application accepts a long HTTP or HTTPS URL and generates a unique 7-character Base62 short code. Users can optionally provide a custom alias or an expiration timestamp. Each redirect increments the click count, while Redis improves redirect performance through cache-aside caching.
 
-## 5. Folder Structure
+## Features
+
+- Short URL generation using random 7-character Base62 codes
+- Custom aliases with validation and uniqueness enforcement
+- Optional URL expiration
+- Redirect handling with Redis cache-aside strategy
+- PostgreSQL as the source of truth
+- Atomic click tracking in PostgreSQL
+- Redis fixed-window rate limiting for URL creation
+- Public analytics endpoint for URL statistics
+- React SPA with responsive UI
+- Docker Compose setup for PostgreSQL, Redis, migrations, API, and frontend
+- Alembic database migrations
+- Automated backend test suite
+- Railway deployment for the frontend and API
+
+## Architecture
+
+```text
+                         +-------------------+
+                         |     React SPA     |
+                         |   Nginx / Vite    |
+                         +---------+---------+
+                                   |
+                                   | REST API
+                                   v
+                         +-------------------+
+                         |      FastAPI       |
+                         |       Router       |
+                         +---------+---------+
+                                   |
+                                   v
+                         +-------------------+
+                         |     URLService     |
+                         |   Business Logic   |
+                         +---------+---------+
+                                   |
+                                   v
+                         +-------------------+
+                         |   URLRepository   |
+                         |  Data Access Layer |
+                         +---------+---------+
+                                   |
+                                   v
+                         +-------------------+
+                         |    PostgreSQL      |
+                         |   Source of Truth  |
+                         +-------------------+
+
+                 Redis is used independently for:
+                 - Redirect caching
+                 - Rate limiting
 ```
+
+### Redirect Flow
+
+```text
+GET /{short_code}
+      |
+      v
+Check Redis
+      |
+   +--+--+
+   |     |
+  Hit   Miss
+   |     |
+   |     v
+   |  PostgreSQL
+   |     |
+   |  Cache result
+   |     |
+   +-----+
+      |
+      v
+Redirect to target URL
+      |
+      v
+Atomic click increment
+```
+
+## Design Decisions
+
+### PostgreSQL as the source of truth
+
+URL records, lifecycle information, and click counts are persisted in PostgreSQL. Redis is treated as an infrastructure layer rather than the authoritative datastore.
+
+### Cache-aside caching
+
+For redirects, the application first checks Redis. A cache miss queries PostgreSQL and then populates Redis with the URL data. Cached entries use a bounded TTL and respect URL expiration.
+
+If Redis becomes unavailable, redirect requests fall back to PostgreSQL so that caching infrastructure failure does not make stored URLs unusable.
+
+### Atomic click tracking
+
+Click counts are incremented using an atomic SQL update:
+
+```sql
+UPDATE urls
+SET clicks = clicks + 1
+WHERE id = :id;
+```
+
+This avoids a read-modify-write race between concurrent redirect requests.
+
+### Short code generation
+
+The service generates a random 7-character Base62 code using Python's `secrets` module. A database uniqueness constraint protects against collisions, and the service retries generation when necessary.
+
+### Rate limiting
+
+URL creation is protected by a Redis fixed-window limiter allowing 10 requests per minute per client IP. The limiter fails open when Redis is unavailable so that Redis failure does not block the core URL creation path.
+
+## Technology Stack
+
+### Backend
+
+- Python
+- FastAPI
+- Pydantic v2
+- SQLAlchemy 2.0 Async
+- asyncpg
+- Alembic
+
+### Frontend
+
+- React
+- Vite
+- Tailwind CSS v4
+- React Router
+- Lucide React
+
+### Infrastructure
+
+- PostgreSQL
+- Redis
+- Docker
+- Docker Compose
+- Nginx
+- Railway
+
+### Testing
+
+- pytest
+- pytest-asyncio
+- HTTPX
+
+## Project Structure
+
+```text
 .
-├── app/                  # FastAPI Application
-│   ├── api/              # Routers (shorten, redirect, analytics)
-│   ├── core/             # Configuration, Rate Limiting, Exceptions
-│   ├── db/               # PostgreSQL & Redis connections
-│   ├── models/           # SQLAlchemy Models
-│   ├── repository/       # Database interaction logic
-│   ├── schemas/          # Pydantic validation schemas
-│   ├── services/         # Core business logic
-│   └── utils/            # Base62 encoder
-├── frontend/             # React SPA
-│   ├── src/              # React Components, Pages, and Services
-│   ├── Dockerfile        # Multi-stage frontend Dockerfile
-│   └── nginx.conf        # Nginx SPA fallback configuration
-├── migrations/           # Alembic Database Migrations
-├── tests/                # Pytest Backend Tests
-├── docker-compose.yml    # Full stack Docker orchestration
-└── Dockerfile            # Backend Dockerfile
+├── app/
+│   ├── api/              # FastAPI routers
+│   ├── core/             # Configuration, rate limiting, exceptions
+│   ├── db/               # PostgreSQL and Redis connections
+│   ├── models/           # SQLAlchemy models
+│   ├── repository/       # Database access layer
+│   ├── schemas/          # Pydantic schemas
+│   ├── services/         # Business logic
+│   └── utils/            # Utility functions such as Base62 generation
+├── frontend/
+│   ├── src/              # React components, pages, services, utilities
+│   ├── Dockerfile        # Multi-stage frontend image
+│   └── nginx.conf        # Nginx SPA configuration
+├── migrations/           # Alembic migrations
+├── tests/                # Backend tests
+├── docker-compose.yml    # Full local stack
+├── Dockerfile            # Backend image
+├── .env.example          # Example environment variables
+└── README.md
 ```
 
-## 6. Docker Setup
-This project runs entirely inside Docker.
+## Running Locally with Docker
+
+Clone the repository and start the full stack:
+
 ```bash
-# Clone the repository
 git clone https://github.com/sai-krishna-kotha/URL-shortener.git
 cd URL-shortener
-
-# Copy the environment file
 cp .env.example .env
-
-# Build and start the complete stack (PostgreSQL, Redis, Migrate, API, Frontend)
 docker compose up -d --build
 ```
 
-The services will be available at:
-- **Frontend**: `http://localhost:3000`
-- **Backend API**: `http://localhost:8000`
+The services are available at:
 
-## 7. Environment Variables
-Local development uses `.env.example` defaults:
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8000
+- Swagger UI: http://localhost:8000/docs
+
+The Compose setup starts PostgreSQL and Redis, runs Alembic migrations, and then starts the API and frontend services.
+
+## Environment Variables
+
+Example local configuration:
+
 ```env
-# Database
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
 POSTGRES_DB=url_shortener
 POSTGRES_SERVER=postgres
 POSTGRES_PORT=5432
 
-# Redis
 REDIS_URL=redis://redis:6379/0
 
-# App Settings
 PROJECT_NAME="URL Shortener API"
 API_V1_STR="/api/v1"
 DOMAIN="http://localhost:8000"
 
-# Frontend Configuration
 VITE_API_BASE_URL=http://localhost:8000
 ```
 
-## 8. Database Migrations
-Migrations are handled automatically by the `migrate` container inside `docker-compose.yml`. On startup, it runs `alembic upgrade head` and ensures the database is fully structured before the API boots.
+For production, `DOMAIN` and `VITE_API_BASE_URL` should point to the deployed API instead of localhost.
 
-## 9. API Endpoints
+## Database Migrations
 
-### `POST /api/v1/urls`
-Creates a shortened URL. Rate limited to 10 requests/minute.
+Database schema changes are managed using Alembic.
+
+The Docker Compose `migrate` service runs:
+
+```bash
+alembic upgrade head
+```
+
+before the API starts.
+
+For local manual migration execution:
+
+```bash
+docker compose run --rm migrate alembic upgrade head
+```
+
+## API Endpoints
+
+### Create a Short URL
+
+```http
+POST /api/v1/urls
+```
+
+Request:
+
 ```json
-// Request
 {
   "target_url": "https://example.com",
-  "custom_alias": "my-alias", // Optional
-  "expires_at": "2026-10-10T12:00:00Z" // Optional
+  "custom_alias": "example",
+  "expires_at": "2026-10-10T12:00:00Z"
 }
+```
 
-// Response (201 Created)
+`custom_alias` and `expires_at` are optional.
+
+Response:
+
+```json
 {
   "id": 1,
-  "short_code": "my-alias",
+  "short_code": "example",
   "target_url": "https://example.com",
-  "short_url": "http://localhost:8000/my-alias",
-  ...
-}
-```
-
-### `GET /{short_code}`
-Redirects the user to the target URL (307 Temporary Redirect) and increments clicks.
-
-### `GET /api/v1/urls/{short_code}/stats`
-Returns JSON lifecycle statistics for a given short code.
-```json
-// Response (200 OK)
-{
-  "short_code": "my-alias",
-  "clicks": 42,
+  "created_at": "2026-09-10T00:32:52.414992Z",
+  "expires_at": null,
+  "clicks": 0,
   "is_active": true,
-  ...
+  "short_url": "https://api-production-bf7ba.up.railway.app/example"
 }
 ```
 
-### `GET /health`
-Returns `{"status": "ok"}`. Used by Docker healthchecks.
+### Redirect
 
-## 10. Frontend Setup
-The frontend is built automatically inside Docker and served by Nginx on Port 3000. It utilizes `VITE_API_BASE_URL` mapped to `http://localhost:8000`.
+```http
+GET /{short_code}
+```
 
-## 11. Testing
-Backend tests can be run inside the API container:
+Returns a `307 Temporary Redirect` to the original target URL and increments the click count.
+
+### URL Statistics
+
+```http
+GET /api/v1/urls/{short_code}/stats
+```
+
+Returns lifecycle information and the current click count.
+
+### Health Check
+
+```http
+GET /health
+```
+
+Response:
+
+```json
+{
+  "status": "ok"
+}
+```
+
+## Example Requests
+
+Create a short URL:
+
+```bash
+curl -X POST https://api-production-bf7ba.up.railway.app/api/v1/urls \
+  -H "Content-Type: application/json" \
+  -d '{"target_url":"https://www.google.com"}'
+```
+
+Redirect using the returned short code:
+
+```bash
+curl -i https://api-production-bf7ba.up.railway.app/{short_code}
+```
+
+Check statistics:
+
+```bash
+curl https://api-production-bf7ba.up.railway.app/api/v1/urls/{short_code}/stats
+```
+
+## Validation and Limits
+
+- Only HTTP and HTTPS target URLs are accepted.
+- Target URLs are limited to 2048 characters.
+- Custom aliases are 3 to 30 characters.
+- Custom aliases use alphanumeric characters, `_`, and `-`.
+- URL creation is limited to 10 requests per minute per client IP.
+- Expired or inactive URLs return `410 Gone`.
+
+## Error Codes
+
+| Status | Meaning |
+| --- | --- |
+| 201 | URL created successfully |
+| 307 | Redirect to the target URL |
+| 400 | Invalid URL or alias |
+| 404 | Short code not found |
+| 409 | Custom alias already exists |
+| 410 | URL expired or inactive |
+| 422 | Request validation failed |
+| 429 | Rate limit exceeded |
+| 500 | Internal short-code generation failure |
+
+## Testing
+
+Run the backend test suite inside Docker:
+
 ```bash
 docker compose exec -e PYTHONPATH=/app api pytest tests/
 ```
 
-## 12. Redis Cache Strategy
-The system uses the **Cache-Aside** pattern.
-1. `GET /{short_code}` checks Redis.
-2. If cache hits, redirect immediately.
-3. If cache misses, fetch from PostgreSQL.
-4. Cache the result in Redis with a dynamic TTL (up to 24 hours, or until URL expiration) and redirect.
+The project has automated tests covering repository behavior, API behavior, validation, and application flows.
 
-## 13. Rate Limiting
-A Fixed-Window rate limiter is implemented in Redis (`rate_limit:create_url:{ip}`).
-- Allows 10 requests per 60 seconds per IP.
-- **Fail-Open**: If Redis crashes, the limiter logs a warning but allows requests to proceed to ensure system availability.
+## Deployment
 
-## 14. Click Tracking
-Every time a URL is redirected, the click count is atomically incremented in PostgreSQL via `UPDATE urls SET clicks = clicks + 1`. This guarantees correct counts under concurrent load.
+The project is deployed using Railway with separate public services for the backend API and React frontend.
 
-## 15. Error/Status Codes
-- `201 Created`: URL successfully shortened.
-- `307 Temporary Redirect`: Successful redirection.
-- `400 Bad Request`: Invalid URL format or alias format.
-- `404 Not Found`: Short code does not exist.
-- `409 Conflict`: Custom alias is already taken.
-- `410 Gone`: URL has expired or been deactivated.
-- `429 Too Many Requests`: Rate limit exceeded.
+Production services:
 
-## 16. Example Requests
-**Create URL using cURL:**
-```bash
-curl -X POST http://localhost:8000/api/v1/urls \
-     -H "Content-Type: application/json" \
-     -d '{"target_url": "https://google.com"}'
+```text
+Frontend -> https://url-shortener-production-121.up.railway.app
+API      -> https://api-production-bf7ba.up.railway.app
 ```
 
-**Check Stats:**
-```bash
-curl http://localhost:8000/api/v1/urls/{short_code}/stats
-```
+The frontend is built as a static React application and served by Nginx. The API runs with FastAPI and Uvicorn. PostgreSQL and Redis provide the backend persistence and infrastructure layers.
 
-## 17. Known Limitations
-- The Analytics endpoint is completely public.
-- The Rate Limiter uses a basic Fixed-Window, which is susceptible to burst traffic at window edges.
-- Click counting is synchronous and synchronous row-level locking in PostgreSQL will eventually bottleneck at extremely high scale (10k+ clicks/sec on a single link).
+## Known Limitations
 
-## 18. Future Improvements
-- **Authentication**: Add JWT-based user accounts and private analytics.
-- **Asynchronous Click Buffering**: Move click counting to an asynchronous worker (e.g. Celery + Redis buffering) to eliminate database write contention at high scale.
-- **Sliding Window Rate Limiter**: Upgrade to a token bucket or sliding log for more precise abuse prevention.
+- The analytics endpoint is currently public and does not require authentication.
+- The fixed-window rate limiter can allow bursts around window boundaries.
+- Click counting is performed synchronously in PostgreSQL, which can become a bottleneck for very high traffic to a single short URL.
+- Redis is used for caching and rate limiting; PostgreSQL remains the source of truth.
+
+## Future Improvements
+
+- Add authentication and user-owned URLs.
+- Protect analytics with authorization.
+- Add link management operations such as update, deactivate, and delete.
+- Introduce asynchronous click-event processing for higher-scale workloads.
+- Replace fixed-window rate limiting with token-bucket or sliding-window limiting.
+- Add richer analytics such as time-series clicks, referrers, and device information.
+- Add custom domains for generated short URLs.
+
+## Repository
+
+GitHub: https://github.com/sai-krishna-kotha/URL-shortener

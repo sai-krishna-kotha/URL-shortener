@@ -5,7 +5,7 @@ import Button from '../Button';
 
 export default function StatsSearch({ shortCode, setShortCode, isSearching, onSearch }) {
   return (
-    <Card className="p-4 sm:p-6 mb-6 sm:mb-8">
+    <Card className="p-4 sm:p-5 mb-5 sm:mb-6">
       <form onSubmit={onSearch} className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-end">
         <div className="flex-1 min-w-0">
           <InputField

@@ -29,12 +29,12 @@ export default function StatsOverview({ stats }) {
 
       <Card className="p-4 sm:p-5 min-w-0">
         <p className="text-xs font-medium text-gray-500 mb-1">Created</p>
-        <p className="text-sm sm:text-base font-semibold text-gray-900 whitespace-nowrap">{formatDate(stats.created_at).split(',')[0]}</p>
+        <p className="text-sm font-semibold text-gray-900 whitespace-nowrap">{formatDate(stats.created_at).split(',')[0]}</p>
       </Card>
 
       <Card className="p-4 sm:p-5 min-w-0">
         <p className="text-xs font-medium text-gray-500 mb-1">Expires</p>
-        <p className="text-sm sm:text-base font-semibold text-gray-900 whitespace-nowrap">
+        <p className="text-sm font-semibold text-gray-900 whitespace-nowrap">
           {stats.expires_at ? formatDate(stats.expires_at).split(',')[0] : 'Never'}
         </p>
       </Card>

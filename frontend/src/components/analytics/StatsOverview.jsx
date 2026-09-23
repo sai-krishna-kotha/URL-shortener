@@ -5,18 +5,16 @@ export default function StatsOverview({ stats }) {
   if (!stats) return null;
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
-      <Card className="p-4 sm:p-5 border-indigo-100 bg-indigo-50/50 min-w-0">
-        <p className="text-xs sm:text-sm font-medium text-indigo-600 mb-1">Total Clicks</p>
-        <p className="text-2xl sm:text-3xl font-bold text-indigo-900 break-words">
-          {stats.clicks || 0}
-        </p>
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
+      <Card className="p-4 sm:p-5 min-w-0 border-indigo-100 bg-indigo-50/50">
+        <p className="text-xs font-medium text-indigo-600 mb-1">Total Clicks</p>
+        <p className="text-2xl font-bold text-indigo-900 break-words">{stats.clicks || 0}</p>
       </Card>
 
       <Card className="p-4 sm:p-5 min-w-0">
-        <p className="text-xs sm:text-sm font-medium text-gray-500 mb-1">Status</p>
+        <p className="text-xs font-medium text-gray-500 mb-1">Status</p>
         <div className="mt-1">
-          <span className={`inline-flex items-center px-2 py-1 rounded-full text-[11px] sm:text-xs font-medium border ${
+          <span className={`inline-flex items-center px-2 py-1 rounded-full text-[11px] font-medium border ${
             stats.is_active
               ? 'bg-green-50 text-green-700 border-green-200'
               : 'bg-red-50 text-red-700 border-red-200'
@@ -30,15 +28,13 @@ export default function StatsOverview({ stats }) {
       </Card>
 
       <Card className="p-4 sm:p-5 min-w-0">
-        <p className="text-xs sm:text-sm font-medium text-gray-500 mb-1">Created</p>
-        <p className="text-base sm:text-lg font-semibold text-gray-900 break-words">
-          {formatDate(stats.created_at).split(',')[0]}
-        </p>
+        <p className="text-xs font-medium text-gray-500 mb-1">Created</p>
+        <p className="text-sm sm:text-base font-semibold text-gray-900 whitespace-nowrap">{formatDate(stats.created_at).split(',')[0]}</p>
       </Card>
 
       <Card className="p-4 sm:p-5 min-w-0">
-        <p className="text-xs sm:text-sm font-medium text-gray-500 mb-1">Expires</p>
-        <p className="text-base sm:text-lg font-semibold text-gray-900 break-words">
+        <p className="text-xs font-medium text-gray-500 mb-1">Expires</p>
+        <p className="text-sm sm:text-base font-semibold text-gray-900 whitespace-nowrap">
           {stats.expires_at ? formatDate(stats.expires_at).split(',')[0] : 'Never'}
         </p>
       </Card>
